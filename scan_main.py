@@ -6,13 +6,20 @@ UPC_DATABASE_URL = 'http://api.upcdatabase.org/json/'
 UPC_LOOKUP_API_KEY = '85043ef8601462a39e97cee08c9baa5b/'
 
 
+def string_to_hex(name):
+    hex_array = []
+    for letter in name:
+        hex_val = hex(ord(letter))
+        hex_array.append(hex_val)
+    return hex_array
+
 def get_item_name(upc_dictionary):
     item_name = upc_dictionary['itemname']
     description = upc_dictionary['description']
     if item_name == "":
-        print description.title()
+        return description.title()
     else:
-        print item_name.title()
+        return item_name.title()
 
 def lookup_barcode(barcode):
     api_request = urllib2.Request('%s%s%s' % (UPC_DATABASE_URL,
@@ -26,4 +33,5 @@ if __name__ == "__main__":
         barcode = raw_input('UPC-A Barcode: ')
         # API doesn't accept first int in UPC-A barcode
         upc_dictionary = lookup_barcode(barcode[1:])
-        get_item_name(upc_dictionary)
+        name = get_item_name(upc_dictionary)
+        hex_array = string_to_hex(name)
