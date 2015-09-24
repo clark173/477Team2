@@ -53,7 +53,8 @@ if __name__ == "__main__":
         upc_dictionary = lookup_barcode(barcode)
         name = get_item_name(upc_dictionary)
         if name is None:
-            print 'Invalid barcode'
+            print 'Barcode not found'
+            send_uart_data('Barcode not found\r\n')
             continue
         package = create_package(barcode, name, 1, 'IN')
         send_uart_data(package)
