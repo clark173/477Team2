@@ -35,8 +35,7 @@ def get_item_name(upc_dictionary):
 
 def lookup_barcode(barcode):
     # API doesn't accept the first int in the barcode
-    if (len(barcode) % 2) == 1:
-        barcode = barcode[1:]
+    barcode = barcode[1:]
     api_request = urllib2.Request('%s%s%s' % (UPC_DATABASE_URL,
                                               UPC_LOOKUP_API_KEY,
                                               barcode))
