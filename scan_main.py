@@ -5,7 +5,7 @@ import time
 import urllib2
 
 
-BAUD = 115200
+BAUD = 9600
 PORT = '/dev/ttyAMA0'
 
 UPC_DATABASE_URL = 'http://api.upcdatabase.org/json/'
@@ -15,7 +15,7 @@ UPC_LOOKUP_API_KEY = '85043ef8601462a39e97cee08c9baa5b/'
 # Data Structure:
 # <UPC_CODE><NAME><SERVINGS><DATE_IN><IN/OUT>
 def create_package(barcode, name, servings, in_out):
-    return '<%s><%s><%s><%s><%s>\r\n' % (barcode, name, servings,
+    return '///<%s><%s><%s><%s><%s>\r\n' % (barcode, name, servings,
                                      time.strftime("%m/%d/%Y"), in_out)
 
 def send_uart_data(package):
@@ -53,7 +53,7 @@ if __name__ == "__main__":
         name = get_item_name(upc_dictionary)
         if name is None:
             print 'Barcode not found'
-            send_uart_data('Barcode not found\r\n')
+            send_uart_data('///Barcode not found\r\n')
             continue
         package = create_package(barcode, name, 1, 'IN')
         send_uart_data(package)
