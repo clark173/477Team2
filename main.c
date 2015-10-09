@@ -33,22 +33,59 @@
 #define FALSE 0
 #define TRUE 1
 
+#define BAUD 9600
+#define FREQ 60000000  // 60MHz clock frequency
 #define MAX_LENGTH 512
 
 
-void __attribute__ ( (interrupt, no_auto_psv) ) _U1RXInterrupt( void )
+// Global variable declarations
+int string_index = 0;  // Indicates the current index of the input string from the Rx buffer
+char input_string[MAX_LENGTH];
+
+// Flags
+char rx_complete = 0;
+char uart_end_flag = 0;
+
+
+// The following interrupt is triggered whenever a byte is received on the Rx
+// buffer. It checks for a stop symbol of "*/" sent by the Pi and marks the
+// Rx transmission as complete once one is found.
+void __attribute__ ((interrupt, no_auto_psv)) _U1RXInterrupt(void)
 {
-    LATA = U1RXREG;
-    printf("%c", U1RXREG);
+    //LATA = U1RXREG;
+	if (uart_end_flag == 1)
+	{
+		if (U1RXREG == '/')
+		{
+			rx_complete = 1;
+			uart_end_flag = 0;
+			U1MODEbits.UARTEN = 0;  // Temporarily disable UART for computation
+		}
+		else
+		{
+			uart_end_flag = 0;
+			rx_complete = 0;
+		}
+	}
+	
+	if (U1RXREG == '*')
+	{
+		uart_end_flag = 1;
+	}
+	else
+	{
+		uart_end_flag = 0;
+	}
+	input_string[string_index++] = U1RXREG;
     IFS0bits.U1RXIF = 0;
 }
 
-void __attribute__ ( (interrupt, no_auto_psv) ) _U1TXInterrupt( void )
+void __attribute__ ((interrupt, no_auto_psv)) _U1TXInterrupt(void)
 {
     IFS0bits.U1TXIF = 0;
 }
 
-void InitClock( void )
+void InitClock(void)
 {
     PLLFBD = 58;
     CLKDIVbits.PLLPOST = 0;
@@ -65,7 +102,7 @@ void InitClock( void )
     { };
 }
 
-void InitUART2( void )
+void InitUART2(void)
 {
     U1MODEbits.UARTEN = 0;
 
@@ -80,7 +117,8 @@ void InitUART2( void )
     U1MODEbits.PDSEL = 0;
     U1MODEbits.STSEL = 0;
 
-    U1BRG = 389;  // Baud rate of 9600
+	U1BRG = (FREQ / (16*BAUD)) - 1;
+    //U1BRG = 389;  Baud rate of 9600
 
     U1STAbits.UTXISEL1 = 0;
     U1STAbits.UTXINV = 0;
@@ -108,13 +146,62 @@ void InitUART2( void )
     U1STAbits.UTXEN = 1;
 }
 
-
-int main( void )
+// Seperates all of the individual packets received from Rx and returns to main
+char* unpack_data()
 {
+	char local_data[MAX_LENGTH] = input_string;
+	int i;
+	
+	string_index = 0;  // Clear the global variables
+	for (i = 0; i < MAX_LENGTH; i++)
+	{
+		input_string[i] = '';
+	}
+	
+	return local_data.split('<');
+}
+
+// Read the data on the SD card. If it contains the barcode, update it
+// Otherwise, add it to the file
+void read_sd_card(char* packets)
+{
+	
+}
+
+// Send information back to the Raspberry Pi
+void send_uart_data(char* package)
+{
+	U1MODEbits.UARTEN = 1;  // Re-enable UART if not already done
+
+	printf("%s", package);
+}
+
+
+int main(void)
+{
+	// packets[0] = UPC-A Barcode
+	// packets[1] = Item Name
+	// packets[2] = Number of Servings
+	// packets[3] = Scan Date (MM/DD/YYYY);
+	char* packets;
+
     InitClock();
     InitUART2();
-    while( 1 )
+    while(TRUE)
     {
+		if (rx_complete)  // Marked true when a stop word is found
+		{
+			rx_complete = 0;
+			packets = unpack_data();
 
+			if (len(packets) > 1)  // Invalid barcode if == 1
+			{
+				read_sd_card(packets);
+			}
+			else
+			{
+				U1MODEbits.UARTEN = 1;  // Enable UART again for new package
+			}
+		}
     }
 }

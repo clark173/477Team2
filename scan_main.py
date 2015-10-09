@@ -13,10 +13,10 @@ UPC_LOOKUP_API_KEY = '85043ef8601462a39e97cee08c9baa5b/'
 
 
 # Data Structure:
-# <UPC_CODE><NAME><SERVINGS><DATE_IN><IN/OUT>
-def create_package(barcode, name, servings, in_out):
-    return '///<%s><%s><%s><%s><%s>\r\n' % (barcode, name, servings,
-                                     time.strftime("%m/%d/%Y"), in_out)
+# <UPC_CODE><NAME><SERVINGS><DATE_IN>
+def create_package(barcode, name, servings):
+    return '///<%s><%s><%s><%s>*/' % (barcode, name, servings,
+                                     time.strftime("%m/%d/%Y"))
 
 def send_uart_data(package):
     port = serial.Serial(PORT, BAUD)
@@ -55,5 +55,5 @@ if __name__ == "__main__":
             print 'Barcode not found'
             send_uart_data('///Barcode not found\r\n')
             continue
-        package = create_package(barcode, name, 1, 'IN')
+        package = create_package(barcode, name, 1)
         send_uart_data(package)
