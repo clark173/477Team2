@@ -4,6 +4,9 @@ import sys
 import time
 import urllib2
 
+from main_window import Ui_MainWindow
+from PyQt4 import QtCore, QtGui, uic
+
 
 BAUD = 9600
 PORT = '/dev/ttyAMA0'
@@ -42,7 +45,12 @@ def lookup_barcode(barcode):
     upc_database = urllib2.urlopen(api_request).read()
     return json.loads(upc_database)
 
+
 if __name__ == "__main__":
+    app = QtGui.QApplication(sys.argv)
+    window = Ui_MainWindow()
+    sys.exit(app.exec_())
+
     while True:
         try:
             barcode = raw_input('UPC-A Barcode: ')
