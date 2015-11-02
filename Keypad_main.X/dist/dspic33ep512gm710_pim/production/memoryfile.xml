@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project>
+  <executable name="dist/dspic33ep512gm710_pim/production/Keypad_main.X.production.elf">
+    <memory name="data">
+      <units>bytes</units>
+      <length>49152</length>
+      <used>358</used>
+      <free>48794</free>
+    </memory>
+    <memory name="program">
+      <units>bytes</units>
+      <length>524514</length>
+      <used>3498</used>
+      <free>521016</free>
+    </memory>
+  </executable>
+</project>
