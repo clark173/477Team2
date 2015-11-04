@@ -17,7 +17,9 @@ class Ui_MainWindow(QtGui.QMainWindow):
         self.show()
         self.uart = Uart()
         self.name = ''
-        self.get_barcode()
+
+        self.received_barcode.textChanged.connect(self.get_barcode)
+        #self.connect(self.received_barcode, SIGNAL('textChanged(QString)'), self.get_barcode())
 
     def get_item_name(self, upc_dictionary):
         try:
@@ -41,10 +43,11 @@ class Ui_MainWindow(QtGui.QMainWindow):
 
     def get_barcode(self):
         try:
-            barcode = raw_input()
-            self.update_text(self.ui.received_barcode, barcode)
+            barcode = self.received_barcode.text()
         except KeyboardInterrupt:
             sys.exit(1)
+        if barcode is '':
+            return
         upc_dictionary = self.lookup_barcode(barcode)
         self.name = self.get_item_name(upc_dictionary)
         if self.name is None:
@@ -52,6 +55,8 @@ class Ui_MainWindow(QtGui.QMainWindow):
         else:
             self.update_text(self.ui.item_name, self.name)
             package = self.uart.create_package(barcode, self.name)
+            self.update_text(self.ui.serving_prompt, 'Enter Servings')
+            self.update_text(self.ui.servings_input, '')
             self.uart.send_uart_data(package)
 
     def get_servings(self):
