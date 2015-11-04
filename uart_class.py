@@ -9,6 +9,7 @@ PORT = '/dev/ttyAMA0'
 
 class Uart:
     def receive_uart_data(self):
+        received_data = ''
         current_char = ''
         previous_char = ''
         port = serial.Serial(PORT, BAUD)
@@ -16,6 +17,9 @@ class Uart:
         while previous_char not '*' and current_char not '/':
             previous_char = current_char
             current_char = port.read(1)
+            received_data += current_char
+
+        return received_data
 
     def send_uart_data(self, package):
         port = serial.Serial(PORT, BAUD)
