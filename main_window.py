@@ -19,7 +19,6 @@ class Ui_MainWindow(QtGui.QMainWindow):
         self.name = ''
 
         self.received_barcode.textChanged.connect(self.get_barcode)
-        #self.connect(self.received_barcode, SIGNAL('textChanged(QString)'), self.get_barcode())
 
     def get_item_name(self, upc_dictionary):
         try:
@@ -54,13 +53,28 @@ class Ui_MainWindow(QtGui.QMainWindow):
             self.update_text(self.ui.item_name, 'Item name not found')
         else:
             self.update_text(self.ui.item_name, self.name)
-            package = self.uart.create_package(barcode, self.name)
+            package = self.uart.create_barcode_package(barcode, self.name)
             self.update_text(self.ui.serving_prompt, 'Enter Servings')
             self.update_text(self.ui.servings_input, '')
+            self.get_servings()
             self.uart.send_uart_data(package)
 
     def get_servings(self):
-        pass
+        while True:
+            servings_package = self.uart.receive_uart_data()
+            number = servings_package.split('>')[1][1:]
+            if number is '#':
+                break
+            update_servings_display(number)
+
+    def update_servings_display(self, number):
+        if number not '*':
+            current = self.ui.servings_input.text()
+            self.ui.servings_input.setText('%s%s' %(current, number))
+        else:
+            current = self.ui.servings_input.text()
+            if len(current) > 0:
+                self.ui.servings_input.setText(current[:-1])
 
     def update_text(self, widget, text):
         widget.setText(text)
