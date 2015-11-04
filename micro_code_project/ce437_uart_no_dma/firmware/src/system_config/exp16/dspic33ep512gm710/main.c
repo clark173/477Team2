@@ -117,8 +117,8 @@ void InitUART2(void)
     U1MODEbits.PDSEL = 0;
     U1MODEbits.STSEL = 0;
 
-	U1BRG = (FREQ / (16*BAUD)) - 1;
-    //U1BRG = 389;  Baud rate of 9600
+	//U1BRG = (FREQ / (16*BAUD)) - 1;
+    U1BRG = 389;  //Baud rate of 9600
 
     U1STAbits.UTXISEL1 = 0;
     U1STAbits.UTXINV = 0;
@@ -147,7 +147,7 @@ void InitUART2(void)
 }
 
 // Seperates all of the individual packets received from Rx and returns to main
-char* unpack_data()
+/*char* unpack_data()
 {
 	char local_data[MAX_LENGTH] = input_string;
 	int i;
@@ -159,7 +159,7 @@ char* unpack_data()
 	}
 	
 	return local_data.split('<');
-}
+}*/
 
 // Read the data on the SD card. If it contains the barcode, update it
 // Otherwise, add it to the file
@@ -275,33 +275,36 @@ int main(void)
     ANSELEbits.ANSE14 = 0;
     
     char return_key;
+    InitClock();
+    InitUART2();
     
     /* Infinite Loop */
     while ( 1 )
     {  
-        return_key = 'X'; //initialize return key to default return variable from readKeyboard()
+       return_key = 'X'; //initialize return key to default return variable from readKeyboard()
         
         while(return_key == 'X'){ //while nothing is pressed, keep on making calls
             return_key = readKeyboard();
         }
         
         if(return_key != 'X'){ //if return_key is not default key, print to LCD 
-            //should transmit to UART at this point  
-            LCD_PutChar(return_key);
+            //should transmit to UART at this point
+            char packet[] = "<keypad><x>";
+            packet[9] = return_key;
+            send_uart_data(packet);
         }
         
         while(readKeyboard() != 'X'){
             //no operation till next key is pressed.
-        }
+        }  
     }    
-    InitClock();
-    InitUART2();
-    while(TRUE)
+   
+    /*while(TRUE)
     {
 		if (rx_complete)  // Marked true when a stop word is found
 		{
 			rx_complete = 0;
-			packets = unpack_data();
+			//packets = unpack_data();
 
 			if (len(packets) > 1)  // Invalid barcode if == 1
 			{
@@ -312,5 +315,7 @@ int main(void)
 				U1MODEbits.UARTEN = 1;  // Enable UART again for new package
 			}
 		}
-    }
+    
+    }*/
+    
 }

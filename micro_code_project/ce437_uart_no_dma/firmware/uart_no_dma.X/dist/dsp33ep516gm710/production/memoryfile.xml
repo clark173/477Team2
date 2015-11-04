@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project>
+  <executable name="dist/dsp33ep516gm710/production/uart_no_dma.X.production.elf">
+    <memory name="data">
+      <units>bytes</units>
+      <length>49152</length>
+      <used>666</used>
+      <free>48486</free>
+    </memory>
+    <memory name="program">
+      <units>bytes</units>
+      <length>524514</length>
+      <used>3018</used>
+      <free>521496</free>
+    </memory>
+  </executable>
+</project>

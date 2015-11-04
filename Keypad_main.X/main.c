@@ -59,26 +59,24 @@ int main ( void )
     ANSELCbits.ANSC2 = 0;
     ANSELEbits.ANSE14 = 0;
     
-    int counter = 0;
     char return_key;
     
     /* Infinite Loop */
     while ( 1 )
     {  
-        counter = 0;
-        return_key = 'X';
-        while(return_key == 'X'){
+        return_key = 'X'; //initialize return key to default return variable from readKeyboard()
+        
+        while(return_key == 'X'){ //while nothing is pressed, keep on making calls
             return_key = readKeyboard();
         }
         
-
-        if(return_key != 'X'){
-              LCD_PutChar(return_key);
-          }
+        if(return_key != 'X'){ //if return_key is not default key, print to LCD 
+            //should transmit to UART at this point  
+            LCD_PutChar(return_key);
+        }
         
-     
         while(readKeyboard() != 'X'){
-            //no operation
+            //no operation till next key is pressed.
         }
     }    
 }
