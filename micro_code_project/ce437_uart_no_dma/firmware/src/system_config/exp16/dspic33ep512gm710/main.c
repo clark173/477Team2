@@ -289,9 +289,13 @@ int main(void)
         
         if(return_key != 'X'){ //if return_key is not default key, print to LCD 
             //should transmit to UART at this point
-            char packet[] = "<keypad><x>";
+            char packet[] = "<keypad><x>*/";
             packet[9] = return_key;
             send_uart_data(packet);
+
+            if(return_key == '#'){
+                break;
+            }
         }
         
         while(readKeyboard() != 'X'){
