@@ -1,8 +1,9 @@
 import json
 import sys
+import time
 import urllib2
 
-from PyQt4 import QtGui, uic
+from PyQt4 import QtGui, QtCore, uic
 from uart_class import Uart
 
 
@@ -17,8 +18,12 @@ class Ui_MainWindow(QtGui.QMainWindow):
         self.show()
         self.uart = Uart()
         self.name = ''
+        self.barcode = ''
 
         self.received_barcode.textChanged.connect(self.get_barcode)
+
+        self.uart_timer = QtCore.QTimer()
+        self.uart_timer.timeout.connect(self.get_servings)
 
     def get_item_name(self, upc_dictionary):
         try:
@@ -47,34 +52,39 @@ class Ui_MainWindow(QtGui.QMainWindow):
             sys.exit(1)
         if barcode is '':
             return
+        self.barcode = barcode
         upc_dictionary = self.lookup_barcode(barcode)
         self.name = self.get_item_name(upc_dictionary)
         if self.name is None:
             self.update_text(self.ui.item_name, 'Item name not found')
         else:
             self.update_text(self.ui.item_name, self.name)
-            package = self.uart.create_barcode_package(barcode, self.name)
             self.update_text(self.ui.serving_prompt, 'Enter Servings')
             self.update_text(self.ui.servings_input, '')
-            self.get_servings()
-            self.uart.send_uart_data(package)
+            self.uart_timer.start(200)
 
     def get_servings(self):
-        while True:
-            servings_package = self.uart.receive_uart_data()
-            number = servings_package.split('>')[1][1:]
-            if number is '#':
-                break
-            update_servings_display(number)
+        servings_package = self.uart.receive_uart_data()
+        self.uart_timer.stop()
+        number = servings_package.split('>')[1][1:]
+        self.update_servings_display(number)
+        time.sleep(0.25)
+        self.uart_timer.start(200)
 
     def update_servings_display(self, number):
-        if number not '*':
+        if number is not '*' and number is not '#':
             current = self.ui.servings_input.text()
             self.ui.servings_input.setText('%s%s' %(current, number))
-        else:
+        elif number is '*':
             current = self.ui.servings_input.text()
             if len(current) > 0:
                 self.ui.servings_input.setText(current[:-1])
+        elif number is '#':  # Send via UART
+            current = self.ui.servings_input.text()
+            if len(current) is 0:
+                current = 1
+            uart_package = self.uart.create_barcode_package(self.barcode, self.name, current)
+            #self.uart.send_uart_data(uart_package)
 
     def update_text(self, widget, text):
         widget.setText(text)

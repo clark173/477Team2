@@ -10,16 +10,13 @@ PORT = '/dev/ttyAMA0'
 class Uart:
     def receive_uart_data(self):
         received_data = ''
-        current_char = ''
-        previous_char = ''
-        port = serial.Serial(PORT, BAUD)
 
-        while previous_char not '*' and current_char not '/':
-            previous_char = current_char
-            current_char = port.read(1)
-            received_data += current_char
-
-        return received_data
+        while True:
+            port = serial.Serial(PORT, BAUD)
+            received_data += port.read(1)
+            received_data += port.read(port.inWaiting())
+            if len(received_data) > 12:
+                return received_data
 
     def send_uart_data(self, package):
         port = serial.Serial(PORT, BAUD)
@@ -27,10 +24,5 @@ class Uart:
 
     # Date Structure:
     # <barcode><UPC_CODE><NAME><SERVINGS><DATE_IN>
-    def create_barcode_package(self, barcode, name):
-        return '///<barcode><%s><%s><%s>*/' % (barcode, name, time.strftime('%m/%d/%Y'))
-
-    # Data Structure:
-    # <servings><NUM_SERVINGS>
-    def create_servings_package(self, servings):
-        return '///<servings><%s>*/' %(servings)
+    def create_barcode_package(self, barcode, name, servings):
+        return '///<barcode><%s><%s><%s><%s>*/' % (barcode, name, servings, time.strftime('%m/%d/%Y'))
