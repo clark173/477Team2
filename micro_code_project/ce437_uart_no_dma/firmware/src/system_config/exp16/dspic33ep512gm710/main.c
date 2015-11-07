@@ -146,34 +146,119 @@ void InitUART2(void)
     U1STAbits.UTXEN = 1;
 }
 
-// Seperates all of the individual packets received from Rx and returns to main
-/*char* unpack_data()
+// Separates all of the individual packets received from Rx and returns to main
+char* get_barcode()
 {
-	char local_data[MAX_LENGTH] = input_string;
-	int i;
+	int i = 0;
+    int part_count = 0;
+    int j = 0;
+    char current_char = 0;
+    char previous_char = 0;
+    char info[3][MAX_LENGTH];
 	
+    while(TRUE)
+    {
+        previous_char = current_char;
+        current_char = input_string[i++];
+        if (current_char == '/' && previous_char == '*')
+        {
+            break;
+        }
+        
+        if (part_count == 2)
+        {
+            if (current_char == '>')
+            {
+                info[0][j++] = '*';
+                j = 0;
+                continue;
+            }
+            else if (current_char != '<')
+            {
+                info[0][j++] = current_char;
+            }
+        }
+        
+        if (part_count == 3)
+        {
+            if (current_char == '>')
+            {
+                info[1][j++] = '*';
+                j = 0;
+                continue;
+            }
+            else if (current_char != '<')
+            {
+                info[1][j++] = current_char;
+            }
+        }
+        
+        if (part_count == 4)
+        {
+            if (current_char == '>')
+            {
+                info[2][j++] = '*';
+                j = 0;
+                continue;
+            }
+            else if (current_char != '<')
+            {
+                info[2][j++] = current_char;
+            }
+        }
+        
+        if (current_char == '<')  // Determines which section of the package is read
+        {
+            part_count++;
+        }
+    }
+    
 	string_index = 0;  // Clear the global variables
 	for (i = 0; i < MAX_LENGTH; i++)
 	{
-		input_string[i] = '';
+		input_string[i] = "";
 	}
 	
-	return local_data.split('<');
-}*/
+	return info;
+}
 
 // Read the data on the SD card. If it contains the barcode, update it
 // Otherwise, add it to the file
-void read_sd_card(char* packets)
+void read_sd_card(char** packets)
 {
-	
-}
-
-// Send information back to the Raspberry Pi
-void send_uart_data(char* package)
-{
-	U1MODEbits.UARTEN = 1;  // Re-enable UART if not already done
-
-	printf("%s", package);
+	char barcode[MAX_LENGTH];
+    char data[MAX_LENGTH];
+    char current_char = "";
+    int i = 0, j = 0, k = 1;
+    
+    while (TRUE)
+    {
+        current_char = packets[0][i++];
+        if (current_char == '*')
+        {
+            i = 0;
+            break;
+        }
+        barcode[i] = current_char;
+    }
+    
+    while (TRUE)
+    {
+        current_char = packets[k][i++];
+        if (current_char == '*')
+        {
+            k++;
+            data[j++] = '\n';
+            if (k > 2)
+            {
+                break;
+            }
+            i = 0;
+        }
+        data[j++] = current_char;
+    }
+    
+    printf("%s", data);
 }
 
 char readKeyboard()
@@ -255,7 +340,9 @@ int main(void)
 	// packets[1] = Item Name
 	// packets[2] = Number of Servings
 	// packets[3] = Scan Date (MM/DD/YYYY);
-	char* packets;
+	char** packets;
+    char return_key;
+    char package[] = "<keypad><x>*/";
     
     TRISGbits.TRISG7 = 1; //in breakout pin RF2 (row 1)
     TRISGbits.TRISG2  = 1; //in breakout pin RA2 (row 2)
@@ -274,52 +361,33 @@ int main(void)
     ANSELCbits.ANSC2 = 0;
     ANSELEbits.ANSE14 = 0;
     
-    char return_key;
     InitClock();
     InitUART2();
     
     /* Infinite Loop */
-    while ( 1 )
-    {  
-       return_key = 'X'; //initialize return key to default return variable from readKeyboard()
-        
+    while ( TRUE )
+    {
+        if (rx_complete)
+        {
+            break;
+        }
+        return_key = 'X'; //initialize return key to default return variable from readKeyboard()
+
         while(return_key == 'X'){ //while nothing is pressed, keep on making calls
             return_key = readKeyboard();
         }
-        
-        if(return_key != 'X'){ //if return_key is not default key, print to LCD 
-            //should transmit to UART at this point
-            char packet[] = "<keypad><x>*/";
-            packet[9] = return_key;
-            send_uart_data(packet);
 
-            if(return_key == '#'){
-                break;
-            }
+        if(return_key != 'X'){ //if return_key is not default key, send to RPi
+            package[9] = return_key;
+            U1MODEbits.UARTEN = 1;  // Re-enable UART if not already done
+            printf("%s", package);
         }
-        
+
         while(readKeyboard() != 'X'){
             //no operation till next key is pressed.
-        }  
-    }    
-   
-    /*while(TRUE)
-    {
-		if (rx_complete)  // Marked true when a stop word is found
-		{
-			rx_complete = 0;
-			//packets = unpack_data();
-
-			if (len(packets) > 1)  // Invalid barcode if == 1
-			{
-				read_sd_card(packets);
-			}
-			else
-			{
-				U1MODEbits.UARTEN = 1;  // Enable UART again for new package
-			}
-		}
+        }
+    }
     
-    }*/
-    
+    packets = get_barcode();
+    read_sd_card(packets);
 }
