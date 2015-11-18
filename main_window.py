@@ -100,4 +100,3 @@ class Ui_MainWindow(QtGui.QMainWindow):
 
     def blank_screen(self):
         os.system('xset dpms force off')
-        self.screen_timeout.stop()
