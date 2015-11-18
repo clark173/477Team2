@@ -1,4 +1,5 @@
 import json
+import os
 import sys
 import time
 import urllib2
@@ -25,6 +26,10 @@ class Ui_MainWindow(QtGui.QMainWindow):
         self.uart_timer = QtCore.QTimer()
         self.uart_timer.timeout.connect(self.get_servings)
 
+        self.screen_timeout = QtCore.QTimer()
+        self.screen_timeout.timeout.connect(self.blank_screen)
+        self.screen_timeout.start(120000)
+
     def get_item_name(self, upc_dictionary):
         try:
             item_name = upc_dictionary['itemname']
@@ -46,6 +51,7 @@ class Ui_MainWindow(QtGui.QMainWindow):
         return json.loads(upc_database)
 
     def get_barcode(self):
+        self.screen_timeout.stop()
         try:
             barcode = self.received_barcode.text()
         except KeyboardInterrupt:
@@ -64,12 +70,14 @@ class Ui_MainWindow(QtGui.QMainWindow):
             self.uart_timer.start(200)
 
     def get_servings(self):
+        self.screen_timeout.stop()
         servings_package = self.uart.receive_uart_data()
         self.uart_timer.stop()
         number = servings_package.split('>')[1][1:]
         self.update_servings_display(number)
         time.sleep(0.25)
         self.uart_timer.start(200)
+        self.screen_timeout.start(120000)
 
     def update_servings_display(self, number):
         if number is not '*' and number is not '#':
@@ -80,11 +88,16 @@ class Ui_MainWindow(QtGui.QMainWindow):
             if len(current) > 0:
                 self.ui.servings_input.setText(current[:-1])
         elif number is '#':  # Send via UART
+            self.uart_timer.stop()
             current = self.ui.servings_input.text()
             if len(current) is 0:
                 current = 1
             uart_package = self.uart.create_barcode_package(self.barcode, self.name, current)
-            #self.uart.send_uart_data(uart_package)
+            self.uart.send_uart_data(uart_package)
 
     def update_text(self, widget, text):
         widget.setText(text)
+
+    def blank_screen(self):
+        os.system('xset dpms force off')
+        self.screen_timeout.stop()
