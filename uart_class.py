@@ -1,4 +1,5 @@
 import serial
+import os
 import sys
 import time
 
@@ -8,7 +9,7 @@ PORT = '/dev/ttyAMA0'
 
 
 class Uart:
-    def receive_uart_data(self):
+    def receive_uart_data(self, keypad_ready=False):
         received_data = ''
         port = serial.Serial(PORT, BAUD)
 
@@ -18,8 +19,15 @@ class Uart:
             if len(received_data) > 12:
                 break
 
+        data = received_data.split('<')
+        if data[0].startswith('bluetooth'):
+            os.system('xset dpms force off')
+
         port.close()
-        return received_data
+        if keypad_ready:
+            return received_data
+        else:
+            return None
 
     def send_uart_data(self, package):
         port = serial.Serial(PORT, BAUD)

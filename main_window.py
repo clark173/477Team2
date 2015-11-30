@@ -4,6 +4,7 @@ import sys
 import time
 import urllib2
 
+from inventory_class import Inventory
 from PyQt4 import QtGui, QtCore, uic
 from uart_class import Uart
 
@@ -25,6 +26,7 @@ class Ui_MainWindow(QtGui.QMainWindow):
 
         self.uart_timer = QtCore.QTimer()
         self.uart_timer.timeout.connect(self.get_servings)
+        #self.uart_timer.start(5000)
 
         self.screen_timeout = QtCore.QTimer()
         self.screen_timeout.timeout.connect(self.blank_screen)
@@ -67,19 +69,20 @@ class Ui_MainWindow(QtGui.QMainWindow):
             self.update_text(self.ui.item_name, self.name)
             self.update_text(self.ui.serving_prompt, 'Enter Servings')
             self.update_text(self.ui.servings_input, '')
-            self.uart_timer.start(200)
+            #self.uart_timer.start(200)
 
     def get_servings(self):
         self.screen_timeout.stop()
-        servings_package = self.uart.receive_uart_data()
+        servings_package = self.uart.receive_uart_data(True)
         self.uart_timer.stop()
         number = servings_package.split('>')[1][1:]
-        self.update_servings_display(number)
+        in_out = servings_package.split('>')[2][1:]
+        self.update_servings_display(number, in_out)
         time.sleep(0.25)
         self.uart_timer.start(200)
         self.screen_timeout.start(120000)
 
-    def update_servings_display(self, number):
+    def update_servings_display(self, number, in_out):
         if number is not '*' and number is not '#':
             current = self.ui.servings_input.text()
             self.ui.servings_input.setText('%s%s' %(current, number))
@@ -93,6 +96,7 @@ class Ui_MainWindow(QtGui.QMainWindow):
             if len(current) is 0:
                 current = 1
             uart_package = self.uart.create_barcode_package(self.barcode, self.name, current)
+            self.save_file(current, in_out)
             self.uart.send_uart_data(uart_package)
 
     def update_text(self, widget, text):
@@ -100,3 +104,8 @@ class Ui_MainWindow(QtGui.QMainWindow):
 
     def blank_screen(self):
         os.system('xset dpms force off')
+
+    def save_file(self, servings, in_out):
+        date = datetime.datetime.now()
+        date_string = '%d/%d/%d' %(date.month, date.day, date.year)
+        inventory = inventory.update_file(self.barcode, servings, date_string, self.name, in_out)
