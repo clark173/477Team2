@@ -1,3 +1,4 @@
+import datetime
 import json
 import os
 import sys
@@ -69,7 +70,7 @@ class Ui_MainWindow(QtGui.QMainWindow):
             self.update_text(self.ui.item_name, self.name)
             self.update_text(self.ui.serving_prompt, 'Enter Servings')
             self.update_text(self.ui.servings_input, '')
-            #self.uart_timer.start(200)
+            self.uart_timer.start(200)
 
     def get_servings(self):
         self.screen_timeout.stop()
@@ -106,6 +107,15 @@ class Ui_MainWindow(QtGui.QMainWindow):
         os.system('xset dpms force off')
 
     def save_file(self, servings, in_out):
+        inventory = Inventory()
         date = datetime.datetime.now()
         date_string = '%d/%d/%d' %(date.month, date.day, date.year)
-        inventory = inventory.update_file(self.barcode, servings, date_string, self.name, in_out)
+        inv = inventory.update_file(self.barcode, servings, date_string, self.name, in_out)
+        self.update_text(self.ui.status, '%s in inventory' %(inv))
+        time.sleep(3)
+        reset_settings()
+
+    def reset_settings(self):
+        self.barcode = ''
+        self.name = ''
+        self.ui.received_barcode.setText('')
